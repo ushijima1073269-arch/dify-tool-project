@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>トークスクリプト サポーター</title>
+    <style>
+        body { font-family: sans-serif; margin: 2em; }
+        .container { max-width: 600px; margin: auto; }
+        h1, h2 { color: #333; }
+        .button-group button { margin: 5px; padding: 10px 15px; font-size: 16px; cursor: pointer; }
+        textarea { width: 95%; padding: 10px; font-size: 16px; margin-top: 10px; }
+        .submit-button { padding: 10px 20px; font-size: 16px; margin-top: 10px; cursor: pointer; }
+        #result { margin-top: 20px; padding: 15px; background-color: #f0f0f0; border-left: 5px solid #007bff; white-space: pre-wrap; min-height: 50px; }
+        .loader { display: none; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>トークスクリプト サポーター</h1>
+        
+        <h2>よくある状況（ボタン）</h2>
+        <div class="button-group">
+            <button onclick="getScript('料金が高い')">料金が高い</button>
+            <button onclick="getScript('商品の納期が遅い')">納期が遅い</button>
+            <button onclick="getScript('使い方が分からない')">使い方が分からない</button>
+        </div>
+
+        <h2>自由入力</h2>
+        <textarea id="freeText" rows="4" placeholder="お客様の状況をここに入力..."></textarea>
+        <button class="submit-button" onclick="getScriptFromFreeText()">スクリプト生成</button>
+
+        <div id="loader" class="loader">生成中...</div>
+        <h2>生成されたトークスクリプト</h2>
+        <div id="result">ここに結果が表示されます</div>
+    </div>
+
+    <script>
+        const apiUrl = "/.netlify/functions/dify-proxy"; // Netlifyの中継機能を呼び出す設定
+        const resultDiv = document.getElementById('result');
+        const loader = document.getElementById('loader');
+        const freeTextInput = document.getElementById('freeText');
+
+        async function getScript(situation) {
+            freeTextInput.value = situation;
+            await callApi(situation);
+        }
+
+        async function getScriptFromFreeText() {
+            const situation = freeTextInput.value;
+            if (!situation) { alert('状況を入力してください。'); return; }
+            await callApi(situation);
+        }
+
+        async function callApi(situation) {
+            resultDiv.innerText = "";
+            loader.style.display = 'block';
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({"user_input": situation})
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || `APIエラー: ${response.status}`);
+                }
+
+                const data = await response.json();
+                resultDiv.innerText = data.text;
+            } catch (error) {
+                resultDiv.innerText = `エラーが発生しました: ${error.message}`;
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
