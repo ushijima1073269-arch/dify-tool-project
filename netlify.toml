@@ -1,1 +1,1 @@
-toml [build] functions = "netlify/functions" 
+[build] functions = "netlify/functions" 
